@@ -39,5 +39,55 @@ print(dataset.shape)
 # plt.show()
 
 # scatter plot matrix
-scatter_matrix(dataset)
+# scatter_matrix(dataset)
+# plt.show()
+
+# split out validation dataset
+array = dataset.values
+x = array[:,0:4]
+y = array[:,4]
+validation_size = 0.20
+seed = 7
+x_train, x_validation, y_train, y_validation = model_selection.train_test_split(x, y, test_size=validation_size, random_state=seed)
+
+# test options and evaluation metric
+seed = 7
+scoring = 'accuracy'
+
+# spot check with several algorithms
+
+models = []
+models.append(('LR', LogisticRegression()))
+models.append(('LDA', LinearDiscriminantAnalysis()))
+models.append(('KNN', KNeighborsClassifier()))
+models.append(('CART', DecisionTreeClassifier()))
+models.append(('NB', GaussianNB()))
+models.append(('SVM', SVC()))
+
+# evaluate each model in turn
+results = []
+names = []
+
+for name, model in models:
+    kfold = model_selection.KFold(n_splits=10, random_state=seed)
+    cv_results = model_selection.cross_val_score(model, x_train, y_train, cv=kfold, scoring=scoring)
+    results.append(cv_results)
+    names.append(name)
+    msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+    print msg
+
+# compare alogirthms
+fig = plt.figure()
+fig.suptitle('Algorithm Comparison')
+ax = fig.add_subplot(111)
+plt.boxplot(results)
+ax.set_xticklabels(names)
 plt.show()
+
+# make predictions on validation set
+knn = KNeighborsClassifier()
+knn.fit(x_train, y_train)
+predictions = knn.predict(x_validation)
+print(accuracy_score(y_validation, predictions))
+print(confusion_matrix(y_validation, predictions))
+print(classification_report(y_validation, predictions))
